@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos - Premium World Clock & Meeting Planner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Lucide Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Moment.js and Moment Timezone for robust timezone calculations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        /* Custom scrollbars for a premium feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.6);
+        }
+        /* Glassmorphism utility classes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-all duration-300 pb-16">
+
+    <!-- NAVIGATION BAR -->
+    <nav class="sticky top-0 z-40 glass-panel border-b border-slate-200 dark:border-slate-800 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-tr from-indigo-500 to-purple-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/30 animate-pulse">
+                        <i data-lucide="globe" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-purple-500 dark:from-indigo-400 dark:to-purple-300 bg-clip-text text-transparent">
+                            CHRONOS
+                        </span>
+                        <span class="text-xs block font-semibold text-slate-500 dark:text-slate-400">WORLD CLOCK HUB</span>
+                    </div>
+                </div>
+
+                <!-- Action Items -->
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" class="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-800" title="Toggle Theme">
+                        <i id="themeIcon" data-lucide="sun" class="w-5 h-5"></i>
+                    </button>
+
+                    <!-- App Installer PWA Info Button -->
+                    <button onclick="openModal('pwaModal')" class="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-md hover:shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all text-sm">
+                        <i data-lucide="download-cloud" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">Install App</span>
+                    </button>
+
+                    <!-- Publish Button -->
+                    <button onclick="openModal('publishModal')" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all text-sm">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">Publish to Google Play</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- LEFT COLUMN: Live Local Watch, Quick Tools & Dynamic Adjuster (4 Cols) -->
+        <section class="lg:col-span-4 space-y-8">
+            <!-- LOCAL CLOCK PANEL -->
+            <div class="glass-panel rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+                <!-- Accent Glow -->
+                <div class="absolute -top-16 -right-16 w-32 h-32 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-full blur-2xl transition-all duration-500 group-hover:scale-150"></div>
+                
+                <h2 class="text-xs font-bold tracking-widest text-indigo-600 dark:text-indigo-400 uppercase mb-4 flex items-center gap-1.5">
+                    <span class="flex h-2 w-2 relative">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    Your Current Location
+                </h2>
+
+                <!-- Analog Clock Render Container -->
+                <div class="flex justify-center my-6">
+                    <div class="relative w-44 h-44 rounded-full bg-slate-200/50 dark:bg-slate-800/40 p-2 border border-slate-300/40 dark:border-slate-700/50 flex items-center justify-center shadow-inner">
+                        <canvas id="localAnalogClock" width="160" height="160" class="drop-shadow-xl"></canvas>
+                    </div>
+                </div>
+
+                <!-- Digital Time and Info -->
+                <div class="text-center space-y-2 relative z-10">
+                    <div id="localTimeDisplay" class="text-4xl font-black tracking-tight font-mono tabular-nums bg-gradient-to-r from-slate-900 to-indigo-950 dark:from-white dark:to-slate-200 bg-clip-text text-transparent">
+                        00:00:00 AM
+                    </div>
+                    <div id="localDateDisplay" class="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        Loading date...
+                    </div>
+                    <div id="localTimezoneDisplay" class="inline-flex items-center gap-1 text-xs bg-slate-200/60 dark:bg-slate-800/60 px-3 py-1.5 rounded-full text-indigo-600 dark:text-indigo-300 font-medium">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                        <span id="localTzName">Detecting...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEARCH & ADD TIMEZONE PANEL -->
+            <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+                <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-500"></i> Add World Cities
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Search and pin any timezone/city to your global dashboard watchlist.
+                </p>
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3.5 top-3 w-5 h-5 text-slate-400"></i>
+                    <input type="text" id="timezoneSearch" placeholder="Type city or country name..." class="w-full bg-slate-100 dark:bg-slate-900/60 pl-11 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-sm transition-all" />
+                </div>
+                
+                <!-- Autocomplete Dropdown List Container -->
+                <div id="searchDropdown" class="hidden max-h-56 overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl divide-y divide-slate-100 dark:divide-slate-800/60 z-30 relative">
+                    <!-- Loaded programmatically -->
+                </div>
+
+                <!-- Quick add presets -->
+                <div class="space-y-2">
+                    <span class="text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">Popular Quick Presets</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="addPresetCity('Asia/Tokyo')" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/40 transition-all">🇯🇵 Tokyo</button>
+                        <button onclick="addPresetCity('Europe/London')" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/40 transition-all">🇬🇧 London</button>
+                        <button onclick="addPresetCity('America/New_York')" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/40 transition-all">🇺🇸 New York</button>
+                        <button onclick="addPresetCity('Australia/Sydney')" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/40 transition-all">🇦🇺 Sydney</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TIME TRAVEL ADJUSTER -->
+            <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4 relative overflow-hidden">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <i data-lucide="sliders-horizontal" class="w-5 h-5 text-purple-500"></i> Time Traveler Slider
+                    </h3>
+                    <button id="resetTimeTravel" class="hidden text-xs text-indigo-500 hover:underline font-semibold">Reset</button>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Slide forward or backward to test/convert future times globally. Perfect for planning global events.
+                </p>
+                <div class="space-y-3">
+                    <input type="range" id="timeSlider" min="-720" max="720" value="0" class="w-full accent-indigo-500 cursor-ew-resize bg-slate-200 dark:bg-slate-800 h-2 rounded-lg appearance-none" />
+                    <div class="flex justify-between text-xs font-bold text-slate-400">
+                        <span>-12 Hours</span>
+                        <span id="sliderStatus" class="bg-indigo-500 text-white px-2 py-0.5 rounded-md font-semibold">Live Time</span>
+                        <span>+12 Hours</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: Interactive World Cards & Meeting Planners (8 Cols) -->
+        <section class="lg:col-span-8 space-y-8">
+            <!-- Tabs Navigation -->
+            <div class="flex gap-2 p-1.5 bg-slate-200/50 dark:bg-slate-900/60 rounded-2xl max-w-md border border-slate-300/20 dark:border-slate-800/40">
+                <button onclick="switchTab('watchlistTab')" id="watchlistTabBtn" class="flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-white transition-all">
+                    <i data-lucide="layout-grid" class="w-4 h-4"></i> World Dashboard
+                </button>
+                <button onclick="switchTab('plannerTab')" id="plannerTabBtn" class="flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all">
+                    <i data-lucide="calendar" class="w-4 h-4"></i> Global Planner
+                </button>
+            </div>
+
+            <!-- TAB 1: WORLD DASHBOARD (Watchlist) -->
+            <div id="watchlistTab" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            My Global Watchlist
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Real-time status of pinned cities around the world</p>
+                    </div>
+                    <button onclick="clearWatchlist()" class="text-xs flex items-center gap-1 font-semibold text-rose-500 hover:text-rose-600 transition-all bg-rose-500/10 dark:bg-rose-500/20 px-3 py-1.5 rounded-xl">
+                        <i data-lucide="trash" class="w-3.5 h-3.5"></i> Clear All
+                    </button>
+                </div>
+
+                <!-- CARDS GRID -->
+                <div id="watchlistGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Dynamic city cards injected here -->
+                </div>
+
+                <!-- Empty state fallback -->
+                <div id="emptyWatchlistState" class="hidden text-center py-12 px-6 border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl space-y-4">
+                    <div class="mx-auto w-12 h-12 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center">
+                        <i data-lucide="info" class="w-6 h-6 text-slate-400"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Your Watchlist is empty</p>
+                        <p class="text-xs text-slate-400">Start typing a country or city above to pin clocks on your screen.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: GLOBAL MEETING PLANNER -->
+            <div id="plannerTab" class="hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100">Global Overlap Planner</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Find the optimal window to arrange calls, syncs, or gaming session overlaps across multiple continents.</p>
+                </div>
+
+                <!-- Hour Legend Indicator Info -->
+                <div class="flex flex-wrap gap-4 text-xs font-bold p-4 bg-slate-100/60 dark:bg-slate-900/40 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded bg-emerald-500/80"></span>
+                        <span class="text-slate-600 dark:text-slate-400">Working Hours (9:00 AM - 5:00 PM)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded bg-amber-500/80"></span>
+                        <span class="text-slate-600 dark:text-slate-400">Awake / Relax (7:00 AM - 9:00 AM, 5:00 PM - 10:00 PM)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded bg-rose-500/80"></span>
+                        <span class="text-slate-600 dark:text-slate-400">Sleeping Hours (10:00 PM - 7:00 AM)</span>
+                    </div>
+                </div>
+
+                <!-- PLANNER GRID -->
+                <div id="plannerTimelineContainer" class="space-y-6 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-xl overflow-x-auto">
+                    <!-- Timelines injected here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- MODAL 1: PWA / INSTALLATION ASSISTANT -->
+        <div id="pwaModal" class="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl relative transform scale-95 transition-all duration-300">
+                <button onclick="closeModal('pwaModal')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-xl hover:bg-slate-100 dark:hover:bg-slate-850">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-indigo-500/10 dark:bg-indigo-500/20 p-3 rounded-2xl text-indigo-500">
+                            <i data-lucide="download-cloud" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Install Chronos Locally</h3>
+                            <p class="text-xs text-slate-500">Get an instant, offline-capable app on your home screen.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-800/50 text-xs leading-relaxed space-y-1.5">
+                            <p class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                <i data-lucide="chrome" class="w-4 h-4 text-amber-500"></i> Android / Google Chrome:
+                            </p>
+                            <p class="text-slate-500 dark:text-slate-400">Click the menu dots icon <b class="text-slate-800 dark:text-slate-200">(...)</b> at the top-right of your browser bar, and press <span class="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-bold">"Add to Home screen"</span> or <span class="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-bold">"Install App"</span>.</p>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-800/50 text-xs leading-relaxed space-y-1.5">
+                            <p class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                <span class="text-base">📱</span> iOS / Safari iPhone:
+                            </p>
+                            <p class="text-slate-500 dark:text-slate-400">Tap the <b class="text-indigo-500">"Share"</b> button (square with arrow up) at the bottom, scroll down, and select <span class="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-bold">"Add to Home Screen"</span>.</p>
+                        </div>
+                    </div>
+
+                    <!-- Trigger PWA installation prompt directly if browser supports it -->
+                    <button id="pwaDirectInstallBtn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-indigo-500/20 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Install Now Instantly
+                    </button>
+                    <p id="pwaStatusMsg" class="text-[10px] text-center text-slate-400">App Manifest triggers automatically upon hosting securely with HTTPS.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 2: GOOGLE PLAY STORE PUBLISHING WIZARD -->
+        <div id="publishModal" class="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-3xl p-6 shadow-2xl relative transform scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto">
+                <button onclick="closeModal('publishModal')" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-xl hover:bg-slate-100 dark:hover:bg-slate-850">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-emerald-500/10 dark:bg-emerald-500/20 p-3 rounded-2xl text-emerald-500">
+                            <i data-lucide="globe-2" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Publish to Google Play Store</h3>
+                            <p class="text-xs text-slate-500">Launch Chronos as a mobile app on Android stores instantly!</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 pt-2 text-sm">
+                        <div class="space-y-2">
+                            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Step 1: Host the App Free</span>
+                            <p class="text-xs text-slate-600 dark:text-slate-400">Deploy this web page in 1-click on <a href="https://www.netlify.com" target="_blank" class="text-indigo-500 font-bold hover:underline">Netlify</a>, <a href="https://vercel.com" target="_blank" class="text-indigo-500 font-bold hover:underline">Vercel</a>, or <a href="https://pages.github.com" target="_blank" class="text-indigo-500 font-bold hover:underline">GitHub Pages</a> for free. These systems will give you a secured link starting with <b class="text-emerald-500">https://</b>.</p>
+                        </div>
+
+                        <div class="border-t border-slate-200 dark:border-slate-800/60 pt-3 space-y-2">
+                            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Step 2: Package with PWABuilder (Microsoft)</span>
+                            <p class="text-xs text-slate-600 dark:text-slate-400">
+                                Go to the open-source platform <a href="https://www.pwabuilder.com/" target="_blank" class="text-indigo-500 font-bold hover:underline">PWABuilder.com</a>. Paste your hosted URL (e.g., <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-indigo-400 text-[11px]">https://your-chronos-clock.netlify.app</code>) and click **Start**.
+                            </p>
+                            <p class="text-xs text-slate-600 dark:text-slate-400">
+                                PWABuilder automatically packages the site into an Android <b class="text-indigo-500">.apk</b> and <b class="text-indigo-500">.aab</b> file, optimized for publication.
+                            </p>
+                        </div>
+
+                        <div class="border-t border-slate-200 dark:border-slate-800/60 pt-3 space-y-2">
+                            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Step 3: Upload to Google Play Console</span>
+                            <p class="text-xs text-slate-600 dark:text-slate-400">
+                                Open a developer registration on <a href="https://play.google.com/console" target="_blank" class="text-indigo-500 font-bold hover:underline">Google Play Console</a>, create a new application, and drag & drop the generated <b class="text-emerald-500">.aab</b> file directly into the Production tab!
+                            </p>
+                        </div>
+
+                        <div class="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-2xl text-xs space-y-1">
+                            <span class="font-bold">✨ Quick Tip: Manifest Included!</span>
+                            <p class="leading-normal">We've built a ready-to-go standard Web App Manifest into the source code to save time and pass all automated Google Play store validations immediately.</p>
+                        </div>
+                    </div>
+
+                    <!-- Close & Finish -->
+                    <button onclick="closeModal('publishModal')" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2.5 rounded-xl transition-all text-xs">
+                        Dismiss Wizard
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    <script>
+        /* WORLD TIMEZONE CITIES CATALOG DATA LIST */
+        const CITIES_CATALOG = [
+            { name: "New Delhi", tz: "Asia/Kolkata", country: "India", emoji: "🇮🇳" },
+            { name: "New York", tz: "America/New_York", country: "United States", emoji: "🇺🇸" },
+            { name: "London", tz: "Europe/London", country: "United Kingdom", emoji: "🇬🇧" },
+            { name: "Tokyo", tz: "Asia/Tokyo", country: "Japan", emoji: "🇯🇵" },
+            { name: "Sydney", tz: "Australia/Sydney", country: "Australia", emoji: "🇦🇺" },
+            { name: "Paris", tz: "Europe/Paris", country: "France", emoji: "🇫🇷" },
+            { name: "Berlin", tz: "Europe/Berlin", country: "Germany", emoji: "🇩🇪" },
+            { name: "Singapore", tz: "Asia/Singapore", country: "Singapore", emoji: "🇸🇬" },
+            { name: "Dubai", tz: "Asia/Dubai", country: "UAE", emoji: "🇦🇪" },
+            { name: "Hong Kong", tz: "Asia/Hong_Kong", country: "Hong Kong", emoji: "🇭🇰" },
+            { name: "Cape Town", tz: "Africa/Johannesburg", country: "South Africa", emoji: "🇿🇦" },
+            { name: "Cairo", tz: "Africa/Cairo", country: "Egypt", emoji: "🇪🇬" },
+            { name: "Nairobi", tz: "Africa/Nairobi", country: "Kenya", emoji: "🇰🇪" },
+            { name: "Lagos", tz: "Africa/Lagos", country: "Nigeria", emoji: "🇳🇬" },
+            { name: "Sao Paulo", tz: "America/Sao_Paulo", country: "Brazil", emoji: "🇧🇷" },
+            { name: "Buenos Aires", tz: "America/Argentina/Buenos_Aires", country: "Argentina", emoji: "🇦🇷" },
+            { name: "Mexico City", tz: "America/Mexico_City", country: "Mexico", emoji: "🇲🇽" },
+            { name: "Los Angeles", tz: "America/Los_Angeles", country: "United States", emoji: "🇺🇸" },
+            { name: "Chicago", tz: "America/Chicago", country: "United States", emoji: "🇺🇸" },
+            { name: "Toronto", tz: "America/Toronto", country: "Canada", emoji: "🇨🇦" },
+            { name: "Vancouver", tz: "America/Vancouver", country: "Canada", emoji: "🇨🇦" },
+            { name: "Reykjavik", tz: "Atlantic/Reykjavik", country: "Iceland", emoji: "🇮🇸" },
+            { name: "Moscow", tz: "Europe/Moscow", country: "Russia", emoji: "🇷🇺" },
+            { name: "Riyadh", tz: "Asia/Riyadh", country: "Saudi Arabia", emoji: "🇸🇦" },
+            { name: "Seoul", tz: "Asia/Seoul", country: "South Korea", emoji: "🇰🇷" },
+            { name: "Shanghai", tz: "Asia/Shanghai", country: "China", emoji: "🇨🇳" },
+            { name: "Bangkok", tz: "Asia/Bangkok", country: "Thailand", emoji: "🇹🇭" },
+            { name: "Mumbai", tz: "Asia/Kolkata", country: "India", emoji: "🇮🇳" },
+            { name: "Perth", tz: "Australia/Perth", country: "Australia", emoji: "🇦🇺" },
+            { name: "Auckland", tz: "Pacific/Auckland", country: "New Zealand", emoji: "🇳🇿" },
+            { name: "Honolulu", tz: "Pacific/Honolulu", country: "United States (Hawaii)", emoji: "🇺🇸" },
+            { name: "Istanbul", tz: "Europe/Istanbul", country: "Turkey", emoji: "🇹🇷" },
+            { name: "Tel Aviv", tz: "Asia/Jerusalem", country: "Israel", emoji: "🇮🇱" },
+            { name: "Jakarta", tz: "Asia/Jakarta", country: "Indonesia", emoji: "🇮🇩" }
+        ];
+
+        /* STATE MANAGEMENT */
+        let state = {
+            pinnedCities: ["Asia/Tokyo", "Europe/London", "America/New_York"], // default pinned cities
+            timeTravelOffsetMinutes: 0, // slider minutes
+            currentTab: "watchlistTab",
+            isDarkMode: true
+        };
+
+        // Load data on window startup
+        window.addEventListener('load', () => {
+            initIcons();
+            loadStateFromLocalStorage();
+            detectLocalTimezone();
+            setupTheme();
+            setupEventListeners();
+            
+            // Start main dynamic loops
+            startTimeLoops();
+            renderWatchlist();
+            renderPlanner();
+        });
+
+        function initIcons() {
+            lucide.createIcons();
+        }
+
+        function loadStateFromLocalStorage() {
+            const saved = localStorage.getItem('chronos_app_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.pinnedCities) state.pinnedCities = parsed.pinnedCities;
+                    if (parsed.isDarkMode !== undefined) state.isDarkMode = parsed.isDarkMode;
+                } catch (e) {
+                    console.error("Failed to restore previous state, defaulting", e);
+                }
+            }
+        }
+
+        function saveStateToLocalStorage() {
+            localStorage.setItem('chronos_app_state', JSON.stringify(state));
+        }
+
+        function detectLocalTimezone() {
+            try {
+                const tz = moment.tz.guess() || "America/New_York";
+                document.getElementById('localTzName').textContent = tz;
+            } catch (e) {
+                document.getElementById('localTzName').textContent = "UTC";
+            }
+        }
+
+        function setupTheme() {
+            const html = document.documentElement;
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            
+            if (state.isDarkMode) {
+                html.classList.add('dark');
+                themeIcon.setAttribute('data-lucide', 'sun');
+            } else {
+                html.classList.remove('dark');
+                themeIcon.setAttribute('data-lucide', 'moon');
+            }
+            initIcons();
+        }
+
+        function setupEventListeners() {
+            // Theme button
+            document.getElementById('themeToggle').addEventListener('click', () => {
+                state.isDarkMode = !state.isDarkMode;
+                setupTheme();
+                saveStateToLocalStorage();
+                drawAnalogClocks();
+            });
+
+            // Search input trigger
+            const searchInput = document.getElementById('timezoneSearch');
+            searchInput.addEventListener('input', (e) => {
+                const value = e.target.value.toLowerCase().trim();
+                const dropdown = document.getElementById('searchDropdown');
+                
+                if (!value) {
+                    dropdown.classList.add('hidden');
+                    return;
+                }
+
+                const results = CITIES_CATALOG.filter(item => 
+                    item.name.toLowerCase().includes(value) || 
+                    item.country.toLowerCase().includes(value) ||
+                    item.tz.toLowerCase().includes(value)
+                );
+
+                if (results.length > 0) {
+                    dropdown.classList.remove('hidden');
+                    dropdown.innerHTML = results.map(item => `
+                        <button onclick="addPresetCity('${item.tz}')" class="w-full text-left px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-sm font-semibold flex items-center justify-between transition-colors">
+                            <span class="flex items-center gap-2">
+                                <span>${item.emoji}</span>
+                                <span class="text-slate-800 dark:text-slate-100">${item.name}</span>
+                                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">${item.country}</span>
+                            </span>
+                            <span class="text-[11px] font-mono text-slate-400 dark:text-slate-500">${item.tz}</span>
+                        </button>
+                    `).join('');
+                } else {
+                    dropdown.classList.remove('hidden');
+                    dropdown.innerHTML = `
+                        <div class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 text-center">
+                            No locations match your search query
+                        </div>
+                    `;
+                }
+            });
+
+            // Close search dropdown on click outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#timezoneSearch') && !e.target.closest('#searchDropdown')) {
+                    document.getElementById('searchDropdown').classList.add('hidden');
+                }
+            });
+
+            // Time Travel range slider
+            const slider = document.getElementById('timeSlider');
+            slider.addEventListener('input', (e) => {
+                state.timeTravelOffsetMinutes = parseInt(e.target.value);
+                
+                const resetBtn = document.getElementById('resetTimeTravel');
+                const statusSpan = document.getElementById('sliderStatus');
+                
+                if (state.timeTravelOffsetMinutes === 0) {
+                    resetBtn.classList.add('hidden');
+                    statusSpan.textContent = "Live Time";
+                    statusSpan.className = "bg-indigo-500 text-white px-2 py-0.5 rounded-md font-semibold";
+                } else {
+                    resetBtn.classList.remove('hidden');
+                    const hours = (state.timeTravelOffsetMinutes / 60).toFixed(1);
+                    statusSpan.textContent = (hours > 0 ? `+${hours}` : hours) + " Hours";
+                    statusSpan.className = "bg-purple-600 text-white px-2 py-0.5 rounded-md font-semibold";
+                }
+
+                // Force layout updates immediately
+                renderWatchlist();
+                renderPlanner();
+            });
+
+            // Reset time travel slider
+            document.getElementById('resetTimeTravel').addEventListener('click', () => {
+                slider.value = 0;
+                state.timeTravelOffsetMinutes = 0;
+                document.getElementById('resetTimeTravel').classList.add('hidden');
+                document.getElementById('sliderStatus').textContent = "Live Time";
+                document.getElementById('sliderStatus').className = "bg-indigo-500 text-white px-2 py-0.5 rounded-md font-semibold";
+                renderWatchlist();
+                renderPlanner();
+            });
+
+            // PWA Direct Install prompt hook
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                const directInstallBtn = document.getElementById('pwaDirectInstallBtn');
+                if (directInstallBtn) {
+                    directInstallBtn.classList.remove('hidden');
+                }
+                const statusMsg = document.getElementById('pwaStatusMsg');
+                if (statusMsg) {
+                    statusMsg.textContent = "Supported browser detected! Launch install window anytime.";
+                }
+            });
+
+            document.getElementById('pwaDirectInstallBtn').addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response to install prompt: ${outcome}`);
+                    deferredPrompt = null;
+                } else {
+                    alert("To install, follow the steps shown below. Your browser or hosted platform doesn't support 1-click install prompts natively without direct user interaction.");
+                }
+            });
+        }
+
+        function startTimeLoops() {
+            // Update every 1000 milliseconds
+            setInterval(() => {
+                updateLocalClockDisplay();
+                
+                // If the traveler is at "Live Time" (0 offset), we must continuously update cards to show accurate ticking seconds.
+                if (state.timeTravelOffsetMinutes === 0) {
+                    renderWatchlist();
+                    // We also redraw analog clock hands so they rotate continuously
+                    drawAnalogClocks();
+                }
+            }, 1000);
+        }
+
+        function updateLocalClockDisplay() {
+            const timeObj = getAdjustedMoment();
+            
+            document.getElementById('localTimeDisplay').textContent = timeObj.format('hh:mm:ss A');
+            document.getElementById('localDateDisplay').textContent = timeObj.format('dddd, MMMM D, YYYY');
+        }
+
+        // Helper: get accurate moment adjusted by time slider
+        function getAdjustedMoment(timezone = null) {
+            let m = timezone ? moment().tz(timezone) : moment();
+            if (state.timeTravelOffsetMinutes !== 0) {
+                m = m.add(state.timeTravelOffsetMinutes, 'minutes');
+            }
+            return m;
+        }
+
+        function addPresetCity(tz) {
+            if (!state.pinnedCities.includes(tz)) {
+                state.pinnedCities.push(tz);
+                saveStateToLocalStorage();
+                renderWatchlist();
+                renderPlanner();
+            }
+            document.getElementById('timezoneSearch').value = "";
+            document.getElementById('searchDropdown').classList.add('hidden');
+        }
+
+        function removeCity(tz) {
+            state.pinnedCities = state.pinnedCities.filter(item => item !== tz);
+            saveStateToLocalStorage();
+            renderWatchlist();
+            renderPlanner();
+        }
+
+        function clearWatchlist() {
+            state.pinnedCities = [];
+            saveStateToLocalStorage();
+            renderWatchlist();
+            renderPlanner();
+        }
+
+        function renderWatchlist() {
+            const grid = document.getElementById('watchlistGrid');
+            const emptyState = document.getElementById('emptyWatchlistState');
+
+            if (state.pinnedCities.length === 0) {
+                grid.innerHTML = "";
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            const localTz = moment.tz.guess() || "America/New_York";
+            const currentLocalTime = getAdjustedMoment(localTz);
+
+            let cardsHtml = "";
+
+            state.pinnedCities.forEach((tz) => {
+                const targetTime = getAdjustedMoment(tz);
+                const metadata = CITIES_CATALOG.find(c => c.tz === tz) || { name: tz.split('/').pop().replace('_', ' '), country: 'Global', emoji: '🌐' };
+                
+                // Calculate time difference relative to local time
+                const offsetMinutesTarget = targetTime.utcOffset();
+                const offsetMinutesLocal = currentLocalTime.utcOffset();
+                const diffMinutes = offsetMinutesTarget - offsetMinutesLocal;
+                const diffHours = diffMinutes / 60;
+                
+                let relativeDiffStr = "Same time";
+                if (diffHours > 0) relativeDiffStr = `+${diffHours}h ahead`;
+                if (diffHours < 0) relativeDiffStr = `${diffHours}h behind`;
+
+                // Calculate dynamic gradient representing diurnal variations
+                const hour = targetTime.hour();
+                let cardGradient = "";
+                let textColor = "text-white";
+                let badgeStyle = "bg-white/20 text-white";
+                let textMuted = "text-indigo-100/80";
+
+                if (hour >= 6 && hour < 8) { // Sunrise
+                    cardGradient = "from-amber-500/90 via-rose-500/90 to-purple-600/90";
+                } else if (hour >= 8 && hour < 17) { // Daylight Sky
+                    cardGradient = "from-blue-500/90 to-indigo-600/90";
+                } else if (hour >= 17 && hour < 19) { // Sunset
+                    cardGradient = "from-orange-500/90 via-red-500/90 to-indigo-900/90";
+                } else { // Starry Night
+                    cardGradient = "from-slate-900 via-indigo-950 to-slate-950";
+                }
+
+                cardsHtml += `
+                    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br ${cardGradient} p-6 shadow-xl text-white group hover:-translate-y-1 transition-all duration-300 border border-white/10">
+                        <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        
+                        <!-- Top header card row -->
+                        <div class="flex justify-between items-start relative z-10">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-1.5 font-bold text-lg">
+                                    <span class="text-2xl select-none">${metadata.emoji}</span>
+                                    <span class="truncate max-w-[150px]">${metadata.name}</span>
+                                </div>
+                                <div class="text-[10px] font-semibold tracking-wider ${textMuted} uppercase">${metadata.country}</div>
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="flex items-center gap-1">
+                                <span class="text-[11px] font-bold px-2 py-1 rounded-lg ${badgeStyle}">${relativeDiffStr}</span>
+                                <button onclick="removeCity('${tz}')" class="p-1.5 rounded-lg bg-white/10 hover:bg-rose-600 text-white/80 hover:text-white transition-colors" title="Remove Pin">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Mid row time info -->
+                        <div class="mt-6 flex justify-between items-end relative z-10">
+                            <div>
+                                <div class="text-3xl font-black font-mono tracking-tight tabular-nums">${targetTime.format('hh:mm A')}</div>
+                                <div class="text-[11px] font-medium tracking-wide ${textMuted} mt-1">${targetTime.format('dddd, MMM D')}</div>
+                            </div>
+                            
+                            <!-- Analog micro clock badge rendering canvas -->
+                            <div class="relative w-14 h-14 rounded-full bg-white/10 border border-white/20 shadow-inner flex items-center justify-center">
+                                <canvas id="miniClock_${tz.replace(/\//g, '_')}" width="50" height="50"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = cardsHtml;
+            initIcons();
+            
+            // Render canvas micro dials
+            drawAnalogClocks();
+        }
+
+        function drawAnalogClocks() {
+            // 1. Draw central local analog watch
+            const localCanvas = document.getElementById('localAnalogClock');
+            if (localCanvas) {
+                const ctx = localCanvas.getContext('2d');
+                const now = getAdjustedMoment();
+                drawAnalogDial(ctx, 80, 80, 75, now.hour(), now.minute(), now.second());
+            }
+
+            // 2. Draw all pinned individual mini canvas clocks
+            state.pinnedCities.forEach(tz => {
+                const canvasId = `miniClock_${tz.replace(/\//g, '_')}`;
+                const canvas = document.getElementById(canvasId);
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    const targetNow = getAdjustedMoment(tz);
+                    drawAnalogDial(ctx, 25, 25, 22, targetNow.hour(), targetNow.minute(), targetNow.second(), true);
+                }
+            });
+        }
+
+        // Clock drawing algorithm
+        function drawAnalogDial(ctx, cx, cy, radius, hour, min, sec, isMini = false) {
+            ctx.clearRect(0, 0, cx * 2, cy * 2);
+            
+            const isDark = document.documentElement.classList.contains('dark');
+            const primaryColor = isDark ? '#ffffff' : '#0f172a';
+            const accentColor = '#6366f1'; // indigo
+            
+            // Draw dial face border for primary clock only
+            if (!isMini) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = isDark ? 'rgba(15,23,42,0.8)' : '#ffffff';
+                ctx.fill();
+                ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Draw standard hour markers
+                ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i * 30 * Math.PI) / 180;
+                    const x1 = cx + (radius - 10) * Math.sin(angle);
+                    const y1 = cy - (radius - 10) * Math.cos(angle);
+                    const x2 = cx + radius * Math.sin(angle);
+                    const y2 = cy - radius * Math.cos(angle);
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+            } else {
+                // Mini dial backdrop inside cards
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.fill();
+            }
+
+            // Calculations for hands angles
+            const hrAngle = ((hour % 12) * 30 * Math.PI / 180) + (min * 0.5 * Math.PI / 180);
+            const minAngle = (min * 6 * Math.PI / 180) + (sec * 0.1 * Math.PI / 180);
+            const secAngle = sec * 6 * Math.PI / 180;
+
+            // DRAW HOUR HAND
+            ctx.strokeStyle = isMini ? '#ffffff' : primaryColor;
+            ctx.lineWidth = isMini ? 1.5 : 4.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + (radius * 0.5) * Math.sin(hrAngle), cy - (radius * 0.5) * Math.cos(hrAngle));
+            ctx.stroke();
+
+            // DRAW MINUTE HAND
+            ctx.lineWidth = isMini ? 1 : 3;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + (radius * 0.75) * Math.sin(minAngle), cy - (radius * 0.75) * Math.cos(minAngle));
+            ctx.stroke();
+
+            // DRAW SECOND HAND (If large main watch)
+            if (!isMini) {
+                ctx.strokeStyle = accentColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + (radius * 0.85) * Math.sin(secAngle), cy - (radius * 0.85) * Math.cos(secAngle));
+                ctx.stroke();
+
+                // Draw central pivot point
+                ctx.fillStyle = accentColor;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            } else {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(cx, cy, 2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+
+        function renderPlanner() {
+            const container = document.getElementById('plannerTimelineContainer');
+            
+            if (state.pinnedCities.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-xs text-slate-500">
+                        Add at least one world city to view the Global Time Overlap planner.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = "";
+            const currentYearAndDay = getAdjustedMoment();
+
+            state.pinnedCities.forEach(tz => {
+                const metadata = CITIES_CATALOG.find(c => c.tz === tz) || { name: tz.split('/').pop().replace('_', ' '), country: 'Global', emoji: '🌐' };
+                const cityNow = getAdjustedMoment(tz);
+                
+                html += `
+                    <div class="space-y-2 border-b border-slate-100 dark:border-slate-800 pb-5 last:border-0 last:pb-0">
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">${metadata.emoji}</span>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-100">${metadata.name}</span>
+                                <span class="text-[10px] text-slate-400 font-semibold">${metadata.country}</span>
+                            </div>
+                            <div class="text-xs font-mono font-bold text-slate-500 dark:text-indigo-400">
+                                Current: ${cityNow.format('hh:mm A')} (${cityNow.format('z')})
+                            </div>
+                        </div>
+
+                        <!-- Responsive 24 Hour timeline block row grid layout -->
+                        <div class="grid grid-cols-24 gap-1 min-w-[640px] pt-1" style="display: grid; grid-template-columns: repeat(24, minmax(0, 1fr));">
+                `;
+
+                // Render block for each of the 24 hours of the current adjusted calendar day
+                for (let h = 0; h < 24; h++) {
+                    // Create object at selected hour
+                    const targetHourObj = moment().tz(tz).startOf('day').add(h, 'hours');
+                    // Shift according to time traveler slider
+                    if (state.timeTravelOffsetMinutes !== 0) {
+                        targetHourObj.add(state.timeTravelOffsetMinutes, 'minutes');
+                    }
+                    const blockHour = targetHourObj.hour();
+                    
+                    // Determine time slice style classification
+                    let blockColor = "";
+                    let timeLabelText = targetHourObj.format('H'); // 24h tag
+
+                    if (blockHour >= 9 && blockHour < 17) {
+                        // Business hours overlap (9 AM to 5 PM)
+                        blockColor = "bg-emerald-500/80 hover:bg-emerald-500 text-white";
+                    } else if ((blockHour >= 7 && blockHour < 9) || (blockHour >= 17 && blockHour < 22)) {
+                        // Awake relax hours
+                        blockColor = "bg-amber-500/80 hover:bg-amber-500 text-slate-900";
+                    } else {
+                        // Sleeping hours (10 PM to 7 AM)
+                        blockColor = "bg-rose-500/70 hover:bg-rose-500 text-white";
+                    }
+
+                    // Highlight active current hour block
+                    const isCurrentHour = blockHour === cityNow.hour();
+                    const ringHighlight = isCurrentHour ? "ring-2 ring-indigo-600 dark:ring-indigo-300 ring-offset-2 ring-offset-slate-900" : "";
+
+                    html += `
+                        <div class="h-10 ${blockColor} ${ringHighlight} rounded-lg flex flex-col justify-center items-center text-[10px] font-black tracking-tight transition-all duration-200 cursor-help select-none" 
+                             title="${targetHourObj.format('dddd hh:00 A (z)')}">
+                            <span>${targetHourObj.format('ha')}</span>
+                        </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function switchTab(tabId) {
+            state.currentTab = tabId;
+            const watchTab = document.getElementById('watchlistTab');
+            const planTab = document.getElementById('plannerTab');
+            const watchBtn = document.getElementById('watchlistTabBtn');
+            const planBtn = document.getElementById('plannerTabBtn');
+
+            if (tabId === 'watchlistTab') {
+                watchTab.classList.remove('hidden');
+                planTab.classList.add('hidden');
+                watchBtn.className = "flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-white transition-all";
+                planBtn.className = "flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all";
+            } else {
+                watchTab.classList.add('hidden');
+                planTab.classList.remove('hidden');
+                watchBtn.className = "flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all";
+                planBtn.className = "flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-white transition-all";
+                renderPlanner();
+            }
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.transform').classList.remove('scale-95');
+            modal.querySelector('.transform').classList.add('scale-100');
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.transform').classList.remove('scale-100');
+            modal.querySelector('.transform').classList.add('scale-95');
+        }
+    </script>
+
+    <!-- Progressive Web App JSON Standard Manifest Setup Embed -->
+    <script type="application/json" id="manifest">
+    {
+      "name": "Chronos - Ultimate Global World Clock",
+      "short_name": "Chronos",
+      "description": "Show the local times of all countries in the world, calculate overlap, and schedule meetings seamlessly.",
+      "start_url": ".",
+      "display": "standalone",
+      "background_color": "#0f172a",
+      "theme_color": "#6366f1",
+      "orientation": "portrait-primary",
+      "icons": [
+        {
+          "src": "https://placehold.co/192x192/6366f1/ffffff?text=C",
+          "sizes": "192x192",
+          "type": "image/png"
+        },
+        {
+          "src": "https://placehold.co/512x512/6366f1/ffffff?text=Chronos",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    }
+    </script>
+</body>
+</html>
